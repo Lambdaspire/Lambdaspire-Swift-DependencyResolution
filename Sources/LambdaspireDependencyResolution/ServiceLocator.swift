@@ -5,6 +5,8 @@ public class ServiceLocator : DependencyRegistry, DependencyResolver {
     
     private var registrations: [String : () -> Any] = [:]
     
+    public init() { }
+    
     public func register<T>(_ singleton: T) {
         register(T.self) { singleton }
     }
