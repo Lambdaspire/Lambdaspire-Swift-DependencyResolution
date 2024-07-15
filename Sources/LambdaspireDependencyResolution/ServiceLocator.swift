@@ -3,7 +3,7 @@ import LambdaspireAbstractions
 
 public class ServiceLocator : DependencyRegistry, DependencyResolver {
     
-    private var registrations: [String : () -> Any] = [:]
+    var registrations: [String : () -> Any] = [:]
     
     public init() { }
     
@@ -27,8 +27,8 @@ public class ServiceLocator : DependencyRegistry, DependencyResolver {
         resolve(T.self)
     }
     
-    public func resolve<T>(_ t: T.Type) -> T {
-        guard let resolved = registrations[key(T.self)]?() as? T else {
+    public func resolve<T>(_ : T.Type) -> T {
+        guard let resolved = tryResolve(T.self) else {
             Log.error(
                 "Failed to resolve dependency of type {Type} from registrations {Registrations}.",
                 (
@@ -40,6 +40,10 @@ public class ServiceLocator : DependencyRegistry, DependencyResolver {
         }
         
         return resolved
+    }
+    
+    func tryResolve<T>(_ : T.Type) -> T? {
+        registrations[key(T.self)]?() as? T
     }
     
     private func key<T>(_ : T.Type) -> String {

@@ -16,7 +16,7 @@ public extension DependencyResolver {
     }
     
     fileprivate func autoResolve<T: Resolvable>() -> T {
-        T.init(resolver: self)
+        resolve() as T? ?? T.init(resolver: self)
     }
 }
 
@@ -31,12 +31,21 @@ public extension ServiceLocator {
     }
 }
 
+// Lamentably the most concise way I could come up for strongly-typed LSP,
+// as Swift seemingly does not have the ability to enforce co-dependent generic type constraints.
+// i.e. `register<TContract, TImplementation>(...) where TImplementation : TContract`
 public extension DependencyRegistry where Self : DependencyResolver {
     
-    // TODO: This is an absolute cheat and does not enforce TI implements TC.
-    func register<TC, TI: Resolvable>(_ contract: TC.Type, _ implementation: TI.Type) {
-        register(TC.self) {
-            autoResolve() as TI as! TC
+    // TODO: This one might be better for the Abstractions package.
+    func register<T, R>(_ t: T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
+        register { factory(resolve) }
+    }
+    
+    func register<T, R: Resolvable>(_ t: T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
+        register {
+            factory { _ in
+                autoResolve() as R
+            }
         }
     }
 }

@@ -4,11 +4,7 @@ import LambdaspireAbstractions
 import XCTest
 @testable import LambdaspireDependencyResolution
 
-final class ResolveWithResolvableTests: XCTestCase {
-    
-    override class func setUp() {
-        Log.setLogger(PrintLogger())
-    }
+final class ResolvableWithSimpleGraph: XCTestCase {
     
     func test_ResolveResolvableAsIsDoesNotRequireRegistry() throws {
         
@@ -29,7 +25,7 @@ final class ResolveWithResolvableTests: XCTestCase {
         XCTAssertEqual(root.c.id, c.id)
     }
     
-    func test_ResolveResolvableAsAbstraction() throws {
+    func test_ResolveResolvableViaRegisteredAbstraction() throws {
         
         let a: ResolvableTestDependencyA = .init()
         let b: ResolvableTestDependencyB = .init()
@@ -41,7 +37,7 @@ final class ResolveWithResolvableTests: XCTestCase {
         serviceLocator.register(b)
         serviceLocator.register(c)
         
-        serviceLocator.register(ResolvableTestRootProtocol.self, ResolvableTestRoot.self)
+        serviceLocator.register(ResolvableTestRootProtocol.self) { $0(ResolvableTestRoot.self) }
         
         let root: ResolvableTestRootProtocol = serviceLocator.resolve()
         
@@ -51,14 +47,15 @@ final class ResolveWithResolvableTests: XCTestCase {
     }
 }
 
-protocol ResolvableTestRootProtocol {
+fileprivate protocol ResolvableTestRootProtocol {
     var a: ResolvableTestDependencyA { get }
     var b: ResolvableTestDependencyB { get }
     var c: ResolvableTestDependencyC { get }
 }
 
+
 @Resolvable
-class ResolvableTestRoot : ResolvableTestRootProtocol {
+fileprivate class ResolvableTestRoot : ResolvableTestRootProtocol {
     
     let a: ResolvableTestDependencyA
     let b: ResolvableTestDependencyB
@@ -71,7 +68,7 @@ class ResolvableTestRoot : ResolvableTestRootProtocol {
     }
 }
 
-class ResolvableTestDependency {
+fileprivate class ResolvableTestDependency {
     let id: UUID
     
     init(id: UUID = .init()) {
@@ -79,8 +76,8 @@ class ResolvableTestDependency {
     }
 }
 
-class ResolvableTestDependencyA : ResolvableTestDependency {}
+fileprivate class ResolvableTestDependencyA : ResolvableTestDependency {}
 
-class ResolvableTestDependencyB : ResolvableTestDependency {}
+fileprivate class ResolvableTestDependencyB : ResolvableTestDependency {}
 
-class ResolvableTestDependencyC : ResolvableTestDependency {}
+fileprivate class ResolvableTestDependencyC : ResolvableTestDependency {}
