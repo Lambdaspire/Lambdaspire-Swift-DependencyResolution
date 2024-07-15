@@ -22,9 +22,6 @@ final class ResolveWithResolvableTests: XCTestCase {
         serviceLocator.register(b)
         serviceLocator.register(c)
         
-        // TODO: This is hard with current Abstractions. Needs clever extension with generic constraints that I cna't figure out.
-//        serviceLocator.register(ResolvableTestRootProtocol.self, ResolvableTestRoot.self)
-        
         let root: ResolvableTestRoot = serviceLocator.resolve()
         
         XCTAssertEqual(root.a.id, a.id)
