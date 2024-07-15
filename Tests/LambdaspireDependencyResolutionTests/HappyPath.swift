@@ -3,7 +3,8 @@ import XCTest
 
 final class LambdaspireDependencyResolutionTests: XCTestCase {
     
-    func testServiceLocatorBasics() throws {
+    func test_ServiceLocatorBasics() throws {
+        
         let serviceLocator: ServiceLocator = .init()
         
         serviceLocator.register(TestServiceProtocol.self, TestServiceClass.init)
@@ -14,11 +15,17 @@ final class LambdaspireDependencyResolutionTests: XCTestCase {
         var count: Int = 0
         serviceLocator.register(TestOtherProtocol.self) { TestOtherClass(count: count.increment()) }
         
+        let subTypeSingleton: SubType = .init()
+        serviceLocator.register(subTypeSingleton)
+        serviceLocator.register(BaseType.self) { $0(SubType.self) }
+        
         let resolvedSingletonByInference: TestServiceClass = serviceLocator.resolve()
         let resolvedSingletonByExplicitType = serviceLocator.resolve(TestServiceClass.self)
         
         let newInstanceResolvedByInference: TestServiceProtocol = serviceLocator.resolve()
         let newInstanceResolvedByExplitiType = serviceLocator.resolve(TestServiceProtocol.self)
+        
+        let subTypeAsBaseType: BaseType = serviceLocator.resolve()
         
         let unregisteredAsOptional: UnregisteredProtocol? = serviceLocator.resolve()
         
@@ -37,23 +44,25 @@ final class LambdaspireDependencyResolutionTests: XCTestCase {
             XCTAssertEqual(serviceLocator.resolve(TestOtherProtocol.self).count, n)
         }
         
+        XCTAssertIdentical(subTypeAsBaseType as! SubType, subTypeSingleton)
+        
         XCTAssertNil(unregisteredAsOptional)
     }
 }
 
-protocol TestServiceProtocol {
+fileprivate protocol TestServiceProtocol {
     var id: UUID { get }
 }
 
-class TestServiceClass : TestServiceProtocol {
+fileprivate class TestServiceClass : TestServiceProtocol {
     var id: UUID = .init()
 }
 
-protocol TestOtherProtocol {
+fileprivate protocol TestOtherProtocol {
     var count: Int { get }
 }
 
-class TestOtherClass : TestOtherProtocol {
+fileprivate class TestOtherClass : TestOtherProtocol {
     let count: Int
     
     init(count: Int) {
@@ -61,9 +70,19 @@ class TestOtherClass : TestOtherProtocol {
     }
 }
 
-protocol UnregisteredProtocol { }
+fileprivate protocol BaseType { }
 
-extension Int {
+fileprivate class SubType : BaseType {
+    let id: UUID
+    
+    init(id: UUID = .init()) {
+        self.id = id
+    }
+}
+
+fileprivate protocol UnregisteredProtocol { }
+
+fileprivate extension Int {
     mutating func increment() -> Self {
         self += 1
         return self

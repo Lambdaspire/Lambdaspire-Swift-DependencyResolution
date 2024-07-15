@@ -2,6 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
     name: "LambdaspireDependencyResolution",
@@ -20,16 +21,43 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions",
-            from: "1.0.0")
+            from: "1.0.0"),
+        .package(
+            url: "https://github.com/Lambdaspire/Lambdaspire-Swift-Logging",
+            from: "1.0.0"),
+        .package(
+            url: "https://github.com/apple/swift-syntax.git",
+            from: "509.0.0")
     ],
     targets: [
+        
+        // Macros and Macros Tests
+        .macro(
+            name: "LambdaspireDependencyResolutionMacros",
+            dependencies: [
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+            ]
+        ),
+        .testTarget(
+            name: "LambdaspireDependencyResolutionMacrosTests",
+            dependencies: [
+                "LambdaspireDependencyResolutionMacros",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]),
+        
+        // Library and Library Tests
         .target(
             name: "LambdaspireDependencyResolution",
             dependencies: [
+                "LambdaspireDependencyResolutionMacros",
                 .product(name: "LambdaspireAbstractions", package: "Lambdaspire-Swift-Abstractions")
             ]),
         .testTarget(
             name: "LambdaspireDependencyResolutionTests",
-            dependencies: ["LambdaspireDependencyResolution"]),
+            dependencies: [
+                "LambdaspireDependencyResolution",
+                .product(name: "LambdaspireLogging", package: "Lambdaspire-Swift-Logging")
+            ]),
     ]
 )
