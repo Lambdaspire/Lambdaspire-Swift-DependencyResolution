@@ -1,5 +1,5 @@
 {
-  "originHash" : "66ad32f17f9385172cacb7d11b530044d37d3f3c1e6c3cba4523fee0a851f04f",
+  "originHash" : "776f42d44517bbd6ad86ea4b430a34c1ec00c8a6f25b7bea5e322db4c0eaf822",
   "pins" : [
     {
       "identity" : "lambdaspire-swift-abstractions",
@@ -8,6 +8,24 @@
       "state" : {
         "revision" : "304fb68a55c3442669334ba7785c217f57d109b7",
         "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "lambdaspire-swift-logging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Lambdaspire/Lambdaspire-Swift-Logging",
+      "state" : {
+        "revision" : "37eeaca6c05d5c6a9cdbbcbe098cb0c27fb63447",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-syntax.git",
+      "state" : {
+        "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
+        "version" : "509.1.1"
       }
     }
   ],
