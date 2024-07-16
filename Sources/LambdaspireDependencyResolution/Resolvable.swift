@@ -15,13 +15,13 @@ public protocol Resolvable {
 
 public extension DependencyRegistry where Self : DependencyResolver {
     
-    func register<T, R>(_ t: T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
+    func register<T, R>(_ : T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
         register {
             factory(resolve)
         }
     }
     
-    func register<T, R: Resolvable>(_ t: T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
+    func register<T, R: Resolvable>(_ : T.Type, _ factory: @escaping ((R.Type) -> R) -> T) {
         register {
             factory { _ in
                 autoResolve()
