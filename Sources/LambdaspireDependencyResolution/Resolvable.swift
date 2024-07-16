@@ -16,7 +16,7 @@ public extension DependencyResolver {
     }
     
     fileprivate func autoResolve<T: Resolvable>() -> T {
-        resolve() as T? ?? T.init(resolver: self)
+        T.init(resolver: self)
     }
 }
 
