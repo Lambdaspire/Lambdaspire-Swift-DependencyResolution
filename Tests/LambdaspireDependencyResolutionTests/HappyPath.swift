@@ -1,4 +1,5 @@
 import XCTest
+import LambdaspireAbstractions
 @testable import LambdaspireDependencyResolution
 
 final class LambdaspireDependencyResolutionTests: XCTestCase {

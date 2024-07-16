@@ -6,7 +6,7 @@ import XCTest
 
 final class ResolvableWithSimpleGraph: XCTestCase {
     
-    func test_ResolveResolvableAsIsDoesNotRequireRegistry() throws {
+    func test_ResolveResolvableAsSelf() throws {
         
         let a: ResolvableTestDependencyA = .init()
         let b: ResolvableTestDependencyB = .init()
@@ -17,6 +17,8 @@ final class ResolvableWithSimpleGraph: XCTestCase {
         serviceLocator.register(a)
         serviceLocator.register(b)
         serviceLocator.register(c)
+        
+        serviceLocator.register(asSelf: ResolvableTestRoot.self)
         
         let root: ResolvableTestRoot = serviceLocator.resolve()
         

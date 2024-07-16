@@ -49,4 +49,5 @@ public class ServiceLocator : DependencyRegistry, DependencyResolver {
     private func key<T>(_ : T.Type) -> String {
         .init(describing: T.self)
     }
+
 }

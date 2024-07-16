@@ -17,6 +17,8 @@ final class ResolvableWithComplexInitialization: XCTestCase {
         let singleton: Dependency = .init(label: "Singleton")
         serviceLocator.register(singleton)
         
+        serviceLocator.register(asSelf: Test.self)
+        
         let resolved: Test = serviceLocator.resolve()
         
         XCTAssertIdentical(resolved.injectedLet, singleton)

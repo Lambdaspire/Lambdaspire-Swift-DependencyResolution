@@ -14,16 +14,28 @@ final class ResolvableWithComplexGraph: XCTestCase {
         
         let serviceLocator: ServiceLocator = .init()
         
-        serviceLocator.register(ComplexTestRootProtocol.self) { $0(ComplexTestRoot.self) }
-        serviceLocator.register(ComplexTestLevel1Protocol.self) { $0(ComplexTestLevel1.self) }
-        serviceLocator.register(ComplexTestLevel2Protocol.self) { $0(ComplexTestLevel2.self) }
-        serviceLocator.register(ComplexTestLevel3Protocol.self) { $0(ComplexTestLevel3.self) }
+        serviceLocator.register(ComplexTestLevel3.self, ComplexTestLevel3.init)
+        
+        serviceLocator.register(asSelf: ComplexTestRoot.self)
+        
+        serviceLocator.register(ComplexTestRootProtocol.self) {
+            $0(ComplexTestRoot.self)
+        }
+        serviceLocator.register(ComplexTestLevel1Protocol.self) {
+            $0(ComplexTestLevel1.self)
+        }
+        serviceLocator.register(ComplexTestLevel2Protocol.self) {
+            $0(ComplexTestLevel2.self)
+        }
+        serviceLocator.register(ComplexTestLevel3Protocol.self) {
+            $0(ComplexTestLevel3.self)
+        }
         
         let rootViaRegisteredAbstraction: ComplexTestRootProtocol = serviceLocator.resolve()
-        let rootViaAutoResolution: ComplexTestRoot = serviceLocator.resolve()
+        let rootViaRegisteredImplementation: ComplexTestRoot = serviceLocator.resolve()
         
         XCTAssertEqual(rootViaRegisteredAbstraction.level1.level2.level3.theEnd, "Sweet")
-        XCTAssertEqual(rootViaAutoResolution.level1.level2.level3.theEnd, "Sweet")
+        XCTAssertEqual(rootViaRegisteredImplementation.level1.level2.level3.theEnd, "Sweet")
     }
 }
 
@@ -73,7 +85,6 @@ fileprivate class ComplexTestLevel2 : ComplexTestLevel2Protocol {
     }
 }
 
-@Resolvable
 fileprivate class ComplexTestLevel3 : ComplexTestLevel3Protocol {
     
     let theEnd: String = "Sweet"
