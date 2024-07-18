@@ -224,4 +224,4 @@ func register<R: Resolvable>(_ : R.Type) {
 }
 ```
 
-i.e. a simple factory registration that invokes the static `init(resolver: DependencyResolver)` created by the macro, which in turn initializes all members by resolving them via the same `DependnecyResolver` in the same way.
+i.e. a simple factory registration that invokes the static `init(resolver: DependencyResolver)` created by the macro, which in turn initializes all members by resolving them via the same `DependencyResolver` in the same way.
