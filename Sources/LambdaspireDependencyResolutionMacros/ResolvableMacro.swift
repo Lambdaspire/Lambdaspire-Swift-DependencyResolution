@@ -103,3 +103,89 @@ public struct ResolvableMacro : MemberMacro, ExtensionMacro {
             ]
         }
 }
+
+public struct ResolvedMacro : AccessorMacro, PeerMacro {
+    
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingAccessorsOf declaration: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext) throws -> [AccessorDeclSyntax] {
+            
+            guard let binding = declaration
+                .as(VariableDeclSyntax.self)?
+                .bindings
+                .first else {
+                    // TODO: Throw correct error
+                    context.diagnose(.init(node: node, message: ResolvableMacroUsageError.notClass))
+                    return []
+                }
+            
+            let name = binding.pattern
+            
+            guard let type = binding.typeAnnotation?.trimmed else {
+                // TODO: Throw correct error
+                context.diagnose(.init(node: node, message: ResolvableMacroUsageError.notClass))
+                return []
+            }
+            
+            return [
+                // Unfortunately this will cause this warning at run-time:
+                // ⚠ Modifying state during view update, this will cause undefined behavior.
+                // ... but seems fine for now.
+                // TODO: Is there a better way?
+                """
+                get {
+                    guard let resolved_\(raw: name) else {
+                        let r\(raw: type) = resolved_scope.resolve()
+                        resolved_\(raw: name) = r
+                        return r
+                    }
+                    return resolved_\(raw: name)
+                }
+                """
+            ]
+        }
+    
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingPeersOf declaration: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+            
+            guard let binding = declaration
+                .as(VariableDeclSyntax.self)?
+                .bindings
+                .first else {
+                    // TODO: Throw correct error
+                    context.diagnose(.init(node: node, message: ResolvableMacroUsageError.notClass))
+                    return []
+                }
+            
+            let name = binding.pattern
+            
+            guard let type = binding.typeAnnotation?.trimmed else {
+                // TODO: Throw correct error
+                context.diagnose(.init(node: node, message: ResolvableMacroUsageError.notClass))
+                return []
+            }
+            
+            return [
+                """
+                @State private var resolved_\(raw: name)\(type)? = nil
+                """
+            ]
+        }
+}
+
+public struct ResolvedScopeMacro : MemberMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+            
+            [
+                #"""
+                @Environment(\.scope) private var resolved_scope
+                """#
+            ]
+        }
+}
