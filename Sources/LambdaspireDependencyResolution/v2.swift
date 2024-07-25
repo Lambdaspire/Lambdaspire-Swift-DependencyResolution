@@ -4,6 +4,9 @@ import SwiftUI
 protocol DependencyResolverr {
     func resolve<C>() -> C
     func resolve<C>(_ : C.Type) -> C
+    
+    func tryResolve<C>() -> C?
+    func tryResolve<C>(_ : C.Type) -> C?
 }
 
 protocol Resolvablee {
@@ -87,7 +90,7 @@ class ContainerBuilder {
     }
     
     func transient<C, I>(_: C.Type, _ : Assigned<C, I>) where I : Resolvablee {
-        registerTransient(C.self, I.init)
+        registerTransient(C.self, autoResolveFactory(I.self))
     }
     
     private func registerSingleton<C, I>(_ : C.Type, _ fn: @escaping (DependencyResolutionScope) -> I) {
@@ -121,7 +124,7 @@ class ContainerBuilder {
     }
     
     func singleton<C, I>(_: C.Type, _ : Assigned<C, I>) where I : Resolvablee {
-        registerSingleton(C.self, I.init)
+        registerSingleton(C.self, autoResolveFactory(I.self))
     }
     
     private func registerScoped<C, I>(_ : C.Type, _ fn: @escaping (DependencyResolutionScope) -> I) {
@@ -155,7 +158,15 @@ class ContainerBuilder {
     }
     
     func scoped<C, I>(_: C.Type, _ : Assigned<C, I>) where I : Resolvablee {
-        registerScoped(C.self, I.init)
+        registerScoped(C.self, autoResolveFactory(I.self))
+    }
+    
+    private func autoResolveFactory<I: Resolvablee>(_ : I.Type) -> ((DependencyResolutionScope) -> I) {
+        { s in
+            // If a Resolvablee can be resolved via the container, do that.
+            // Otherwise, use the static init.
+            s.tryResolve() ?? I.init(scope: s)
+        }
     }
     
     func build() -> Container {
@@ -182,14 +193,22 @@ class Container : SecretRegistryApi, DependencyResolutionScope {
     }
     
     func resolve<C>() -> C {
-        guard let resolved = (registrations[key(C.self)] ?? { _ in nil })(self) else {
-            fatalError()
+        guard let resolved = tryResolve(C.self) else {
+            fatalError("Cannot resolve \(C.self)")
         }
-        return resolved as! C
+        return resolved
     }
     
     func resolve<C>(_: C.Type) -> C {
         resolve()
+    }
+    
+    func tryResolve<C>() -> C? {
+        (registrations[key(C.self)] ?? { _ in nil })(self) as? C
+    }
+    
+    func tryResolve<C>(_: C.Type) -> C? {
+        tryResolve()
     }
     
     // TODO: Not certain.
@@ -305,7 +324,7 @@ func theApiIWant() {
     // Scope closure
     container.scope(SomeScopeArgs()) { scope in
         let resolvedInClosureScope: X = scope.resolve()
-        log("\(resolvedInClosureScope.self)")
+        log("\(resolvedInClosureScope)")
     }
     
     let innerScope = scope.scope(SomeScopeArgs())
@@ -344,23 +363,20 @@ struct MyRootView : View {
     
     var body: some View {
         MyDependentView()
-            .resolving(from: scope)
+            .resolving(from: scope.scope(SomeScopeArgs()))
     }
 }
 
-class X : Resolvablee {
+protocol XProtocol {
+    var lol: String { get }
+}
+
+class X : XProtocol, Resolvablee {
+    
+    let lol = "XXX"
+    
     required init(scope: any DependencyResolutionScope) {
         fatalError()
-    }
-}
-
-@propertyWrapper
-struct Resolved<T> {
-    
-    var wrappedValue: T
-    
-    init(wrappedValue: T = justGet()) {
-        self.wrappedValue = wrappedValue
     }
 }
 
@@ -371,11 +387,11 @@ func justGet<T>() -> T {
 @ResolvedScope
 struct MyDependentView : View {
     
-    @Resolved var x: X
+    @Resolved var x: XProtocol
     @Resolved var otherX: X
     
     var body: some View {
-        Text("Blah")
+        Text("Blah \(x.lol) \(otherX.lol)")
     }
 }
 
@@ -404,6 +420,14 @@ class EmptyScope : DependencyResolutionScope {
     
     func resolve<C>(_: C.Type) -> C {
         resolve()
+    }
+    
+    func tryResolve<C>() -> C? {
+        nil
+    }
+    
+    func tryResolve<C>(_: C.Type) -> C? {
+        tryResolve()
     }
     
     func scope<A>(_: A) -> DependencyResolutionScope {
