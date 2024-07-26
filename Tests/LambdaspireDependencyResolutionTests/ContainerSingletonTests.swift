@@ -121,6 +121,23 @@ final class ContainerSingletonTests: XCTestCase {
             container.resolve(TestServiceProtocol.self).dependency.label,
             "Override")
     }
+    
+    func test_Singelton_ResolvableAsSelf() {
+        
+        let b: ContainerBuilder = .init()
+        
+        b.singleton(ResolvableTestService.self)
+        
+        b.singleton {
+            Dependency(label: "VeryUnusual") as DependencyProtocol
+        }
+        
+        let container = b.build()
+        
+        XCTAssertEqual(
+            container.resolve(ResolvableTestService.self).dependency.label,
+            "VeryUnusual")
+    }
 }
 
 fileprivate protocol TestServiceProtocol {
