@@ -12,6 +12,7 @@ public protocol DependencyRegistry {
     func singleton<I>(_ : @escaping (DependencyResolutionScope) -> I)
     func singleton<C>(_ : C.Type, _ : @escaping () -> C)
     func singleton<C>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> C)
+    func singleton<C, I>(_ : C.Type, _ : Assigned<C, I>)
     func singleton<I: Resolvable>(_ : I.Type)
     func singleton<C, I: Resolvable>(_ : C.Type, _ : Assigned<C, I>)
     

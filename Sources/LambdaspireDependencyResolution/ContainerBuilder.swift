@@ -7,6 +7,8 @@ public class ContainerBuilder : DependencyRegistry {
     
     var registrations: [ScopedRegistration] = []
     
+    public init() { }
+    
     private func registerTransient<C, I>(_ : C.Type, _ fn: @escaping (any DependencyResolutionScope) -> I) {
         registrations.append { r in
             r.register(C.self) { s in
@@ -67,6 +69,10 @@ public class ContainerBuilder : DependencyRegistry {
     
     public func singleton<I>(_: I.Type) where I : Resolvable {
         registerSingleton(I.self, I.init)
+    }
+    
+    public func singleton<C, I>(_: C.Type, _ : Assigned<C, I>) {
+        registerSingleton(C.self) { $0.resolve() as I }
     }
     
     public func singleton<C, I>(_: C.Type, _ : Assigned<C, I>) where I : Resolvable {
