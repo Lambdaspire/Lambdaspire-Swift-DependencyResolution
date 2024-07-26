@@ -18,7 +18,7 @@ let testMacros: [String: Macro.Type] = [
 
 final class ResolvableMacroTests: XCTestCase {
     
-    func test_ResolvedAndResolvedScope() { // TODO: Rename
+    func test_ResolvedAndResolvedScope() {
         #if canImport(LambdaspireDependencyResolutionMacros)
         assertMacroExpansion(
             #"""
