@@ -33,6 +33,10 @@ public class ContainerBuilder : DependencyRegistry {
         registerTransient(C.self, fn)
     }
     
+    public func transient<C, I>(_: C.Type, _ : Assigned<C, I>) {
+        registerTransient(C.self) { $0.resolve() as I }
+    }
+    
     public func transient<I>(_: I.Type) where I : Resolvable {
         registerTransient(I.self, I.init)
     }
@@ -67,12 +71,12 @@ public class ContainerBuilder : DependencyRegistry {
         registerSingleton(C.self, fn)
     }
     
-    public func singleton<I>(_: I.Type) where I : Resolvable {
-        registerSingleton(I.self, I.init)
-    }
-    
     public func singleton<C, I>(_: C.Type, _ : Assigned<C, I>) {
         registerSingleton(C.self) { $0.resolve() as I }
+    }
+    
+    public func singleton<I>(_: I.Type) where I : Resolvable {
+        registerSingleton(I.self, I.init)
     }
     
     public func singleton<C, I>(_: C.Type, _ : Assigned<C, I>) where I : Resolvable {
@@ -103,6 +107,10 @@ public class ContainerBuilder : DependencyRegistry {
     
     public func scoped<C>(_: C.Type, _ fn: @escaping (any DependencyResolutionScope) -> C) {
         registerScoped(C.self, fn)
+    }
+    
+    public func scoped<C, I>(_: C.Type, _ : Assigned<C, I>) {
+        registerScoped(C.self) { $0.resolve() as I }
     }
     
     public func scoped<I>(_: I.Type) where I : Resolvable {

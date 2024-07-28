@@ -5,6 +5,7 @@ public protocol DependencyRegistry {
     func transient<I>(_ : @escaping (DependencyResolutionScope) -> I)
     func transient<C>(_ : C.Type, _ : @escaping () -> C)
     func transient<C>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> C)
+    func transient<C, I>(_ : C.Type, _ : Assigned<C, I>)
     func transient<I: Resolvable>(_ : I.Type)
     func transient<C, I: Resolvable>(_ : C.Type, _ : Assigned<C, I>)
     
@@ -20,6 +21,7 @@ public protocol DependencyRegistry {
     func scoped<I>(_ : @escaping (DependencyResolutionScope) -> I)
     func scoped<C>(_ : C.Type, _ : @escaping () -> C)
     func scoped<C>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> C)
+    func scoped<C, I>(_ : C.Type, _ : Assigned<C, I>)
     func scoped<I: Resolvable>(_ : I.Type)
     func scoped<C, I: Resolvable>(_ : C.Type, _ : Assigned<C, I>)
 }
