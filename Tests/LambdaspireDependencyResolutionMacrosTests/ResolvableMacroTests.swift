@@ -104,8 +104,8 @@ final class ResolvableMacroTests: XCTestCase {
                     self.c = c
                 }
             
-                required convenience init(resolver: DependencyResolver) {
-                    self.init(a: resolver.resolve(), b: resolver.resolve(), c: resolver.resolve())
+                required convenience init(scope: DependencyResolutionScope) {
+                    self.init(a: scope.resolve(), b: scope.resolve(), c: scope.resolve())
                 }
             }
             
