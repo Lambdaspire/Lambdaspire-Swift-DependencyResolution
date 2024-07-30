@@ -1,4 +1,5 @@
 
+import LambdaspireAbstractions
 import LambdaspireDependencyResolution
 
 protocol TestServiceProtocol {

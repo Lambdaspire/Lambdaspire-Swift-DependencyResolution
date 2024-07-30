@@ -1,4 +1,5 @@
 
+import LambdaspireAbstractions
 import Foundation
 
 public class Container : ScopeRegistry, DependencyResolutionScope {

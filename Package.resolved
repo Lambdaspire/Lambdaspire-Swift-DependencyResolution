@@ -1,22 +1,13 @@
 {
-  "originHash" : "776f42d44517bbd6ad86ea4b430a34c1ec00c8a6f25b7bea5e322db4c0eaf822",
+  "originHash" : "b7cd75f4989c9185eb3ec96a0d8e2f6a8f58058a456dc4a9798c19e57d9fbdb6",
   "pins" : [
     {
       "identity" : "lambdaspire-swift-abstractions",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions",
       "state" : {
-        "revision" : "304fb68a55c3442669334ba7785c217f57d109b7",
-        "version" : "1.0.0"
-      }
-    },
-    {
-      "identity" : "lambdaspire-swift-logging",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Lambdaspire/Lambdaspire-Swift-Logging",
-      "state" : {
-        "revision" : "37eeaca6c05d5c6a9cdbbcbe098cb0c27fb63447",
-        "version" : "1.0.0"
+        "branch" : "v2",
+        "revision" : "b5d8bf41df8ea16866f6a5e9a015cca259b87fc9"
       }
     },
     {

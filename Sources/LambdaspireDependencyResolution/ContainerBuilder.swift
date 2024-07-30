@@ -1,4 +1,6 @@
 
+import LambdaspireAbstractions
+
 protocol ScopeRegistry {
     func register<C, I>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> I)
 }
