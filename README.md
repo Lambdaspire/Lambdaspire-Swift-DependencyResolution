@@ -453,7 +453,7 @@ let builder: ContainerBuilder = .init()
 
 builder.singleton(AuthContext.self)
 
-builder.transient(AuthService.self, assigned(OktaAuthService))
+builder.transient(AuthService.self, assigned(OktaAuthService.self))
 
 builder.transient(OktaConfig.fromBundle)
 
