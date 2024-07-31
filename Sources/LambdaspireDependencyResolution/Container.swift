@@ -19,6 +19,7 @@ public class Container : ScopeRegistry, DependencyResolutionScope {
     
     func register<C, I>(_: C.Type, _ fn: @escaping (any DependencyResolutionScope) -> I) {
         registrations[key(C.self)] = fn
+        registrations[key(Optional<C>.self)] = fn
     }
     
     public func resolve<C>() -> C {

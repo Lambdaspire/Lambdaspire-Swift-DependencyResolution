@@ -147,3 +147,16 @@ final class ContainerSingletonResolvableAsSelf : ContainerBaseTest {
             "VeryUnusual")
     }
 }
+
+final class ContainerSingletonOptionalResolvesWhenNonOptionalIsRegistered : ContainerBaseTest {
+    
+    override func setUpBuilder(_ b: ContainerBuilder) {
+        b.singleton { Dependency(label: "Optional") }
+    }
+    
+    func test() {
+        XCTAssertEqual(
+            container.resolve(Optional<Dependency>.self)?.label,
+            "Optional")
+    }
+}
