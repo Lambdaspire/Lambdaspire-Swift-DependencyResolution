@@ -23,7 +23,9 @@ Use `Container` to resolve dependencies as per the registrations.
 let builder: ContainerBuilder = .init()
 
 builder.transient(SomeStatelessService.self)
+
 builder.scoped(SomeContextuallyStatefulService.self)
+
 builder.singleton(SomeGloballyStatefulService.self)
 
 let container = builder.build()
@@ -451,3 +453,13 @@ let container = builder.build()
 ```
 
 This way, even as dependencies increase in number, our registrations need not change. It's more concise, easier to read, and requires much less maintenance as the codebase evolves.
+
+## Closing
+
+If you're a .NET developer who's been struggling in the Apple developer ecosystem due to a lack of decent IoC, hopefully this package will help. If you've never built with .NET (or any other platform) before but feel like your Swift code routinely becomes a spaghetti mess, this package might help you wrangle complex dependency graphs and write more SOLID code.
+
+Found a bug? Please create an issue and/or a pull request.
+
+Got questions? Reach out and your questions will be added to an FAQ section.
+
+Happy resolving!
