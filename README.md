@@ -2,226 +2,276 @@
 
 A lightweight IoC Container / Service Locator / Dependency Injection package for Swift.
 
+Inspired by Autofac and the modern .NET SDK.
+
 ## Usage
 
 ### High Level
 
-Use `ServiceLocator` to register and resolve dependencies.
+Use `ContainerBuilder` to to register dependencies and build a `Container`.
+
+Register dependencies as one of:
+- Transient: A new instance every time the dependency is resolved.
+- Scoped: A common instance every time the dependency is resolved in the same scope.
+- Singleton: A globally common instance every time the dependency is resolved.
+
+Use `Container` to resolve dependencies as per the registrations.
 
 ```swift
-let serviceLocator: ServiceLocator = .init()
+let builder: ContainerBuilder = .init()
 
-// There are many ways to register a dependency.
-serviceLocator.register(...)
+builder.transient(SomeStatelessService.self)
+builder.scoped(SomeContextuallyStatefulService.self)
+builder.singleton(SomeGloballyStatefulService.self)
 
-// Resolve via type inference from the left side.
-let thing: SomeThing = serviceLocator.resolve()
-
-// Resolve by specifying type on the right side.
-let otherThing = serviceLocator.resolve(SomeThing.self)
+let container = builder.build()
 ```
 
-`ServiceLocator` conforms to both `DependencyRegistry` and `DependencyResolver` from the [Abstractions package](https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions) and is likely all you'd ever need.
+### Scopes
 
-### Registration and Resolution
+The `DependencyResolutionScope` protocol defines means to resolve dependencies and to create a new scope.
 
-You can register dependencies in a variety of ways.
+The `Container` type conforms to this protocol.
 
-#### Singletons
-
-Registering an instance of any type `T` creates a singleton registration for that type.
-Hence, resolving `T` will always produce the singleton.
+Dependencies registered as `scoped` act as singletons within that scope.
 
 ```swift
-let someSingleton: SomeThing = .init()
+let builder: ContainerBuilder = .init()
 
-serviceLocator.register(someSingleton)
+builder.scoped { TodoList() }
 
-let resolvedSingleton: SomeThing = serviceLocator.resolve()
+let container = builder.build()
+
+let rootList: TodoList = container.resolve()
+rootList.add("Demonstrate Scoped Dependencies")
+rootList.print() // Will print one item.
+
+let scope = container.scope()
+
+let scopedList: TodoList = scope.resolve()
+scopedList.print() // Will print zero items.
 ```
 
-You can register a singleton of type `T` as any compatible type.
-Hence, resolving the base type `T` will always produce the singleton.
+### Registration as Self
+
+The simplest way to register dependencies is as self. That is, if you have some concrete type `OpenIdConnectAuthenticationService` and you want to resolve it as such, you can register and resolve like this:
 
 ```swift
-let someSingleton: SomeThing = .init()
+let builder: ContainerBuilder = .init()
 
-serviceLocator.register(BaseThing.self, someSingleton)
+builder.transient(OpenIdConnectAuthenticationService.self)
 
-let resolvedSingelton: BaseThing = serviceLocator.resolve()
+let container = builder.build()
+
+let openIdAuth: OpenIdConnectAuthenticationService = container.resolve()
 ```
 
-#### Factories
+While convenient, and in some cases totally fine, this violates the [Dependency Inversion principle](https://en.wikipedia.org/wiki/Dependency_inversion_principle) in [SOLID](https://en.wikipedia.org/wiki/SOLID) which states that implementation details should depend on abstractions.
 
-Registering a closure returning any type `T` creates a dynamic registration for that type.
-Hence, resolving `T` will execute the closure to produce its return value.
+### Registration as Abstraction
+
+To register and resolve dependencies in a SOLID fashion, you can register concrete implementations behind abstractions and resolve via said abstractions. To do this with our authentication example above, we might introduce a protocol `AuthenticationService` which `OpenIdConnectAuthenticationService` conforms to. We would then depend on that protocol abstraction instead of the concrete class.
 
 ```swift
-// A new SomeThing every time.
-serviceLocator.register { SomeThing() }
+let builder: ContainerBuilder = .init()
 
-var someThing: SomeThing = serviceLocator.resolve()
-someThing = serviceLocator.resolve() // Another one.
-someThing = serviceLocator.resolve() // Another one.
+builder.transient(AuthenticationService.self, assigned(OpenIdConnectAuthenticationService.self))
+
+let container = builder.build()
+
+let auth: AuthenticationService = container.resolve()
 ```
 
-You can register a factory producing `T` as any compatible type.
-Hence, resolving the base type `T` will execute the closure to produce its return value.
+This means that, perhaps for testing purposes or if your authentication story changes, you can substitute in an alternative implementation.
 
 ```swift
-// A new SomeThing every time, resolved via BaseThing.
-serviceLocator.register(BaseThing.self) { SomeThing() }
+// builder.transient(AuthenticationService.self, assigned(OpenIdConnectAuthenticationService.self))
+builder.transient(AuthenticationService.self, assigned(MockAuthenticationService.self))
+``` 
 
-var thing: BaseThing = serviceLocator.resolve()
-thing = serviceLocator.resolve() // Another one.
-thing = serviceLocator.resolve() // Another one.
+Abstractions needn't be protocols. The concrete type must simply inherit from / conform to the abstract type. 
+
+### Registration Methods
+
+The `DependencyRegistry` protocol has 7 methods per registration type (transient, singleton, scoped):
+
+```swift
+func transient<I>(_ : @escaping () -> I)
+func transient<I>(_ : @escaping (DependencyResolutionScope) -> I)
+func transient<C>(_ : C.Type, _ : @escaping () -> C)
+func transient<C>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> C)
+func transient<C, I>(_ : C.Type, _ : Assigned<C, I>)
+func transient<I: Resolvable>(_ : I.Type)
+func transient<C, I: Resolvable>(_ : C.Type, _ : Assigned<C, I>)
+
+// Repeat for singleton and scoped.
 ```
 
-### Complex Graphs
+We'll cover each method, subbing in `register` instead of `transient` or the like.
 
-So far we have covered how to register standalone types with simple object graphs.
-Complex object graphs with hierarchies of dependencies that we want resolved require an additional step to avoid verbosity.
+#### 1. Implementation Factory
 
-#### Verbosity
-
-This is the verbose approach:
+##### Definition
 
 ```swift
-serviceLocator.register {
-    ComplexObject(
-        dependencyA: serviceLocator.resolve(),
-        dependencyB: serviceLcoator.resolve(),
-        // etc
-    )
+func register<I>(_ : @escaping () -> I)
+```
+
+Registers an inferred type `I` using a function returning that type.
+
+##### Usage
+
+```swift
+builder.register { Implementation() }
+// ...
+let r: Implementation = container.resolve()
+```
+
+Note that the parameter is simply a function, so you could also use the type's static `init` function if you prefer the parenthetical style over the closure braces:
+
+```swift
+builder.register(Implementation.init)
+// ...
+let r: Implementation = container.resolve()
+```
+
+#### 2. Implementation Factory with Scope Parameter
+
+##### Definition
+
+```swift
+func register<I>(_ : @escaping (DependencyResolutionScope) -> I)
+```
+
+Registers an inferred type `I` using a function parameterised by the current scope.
+
+##### Usage
+
+```swift
+builder.register { scope in
+    Implementation(dependency: scope.resolve())
 }
+// ...
+let r: Implementation = container.resolve()
 ```
 
-If each dependency has its own dependencies, this quickly becomes a maintenance burden and, generally, ugly.
+#### 3. Contract Factory
 
-Not good. Instead, use the `@Resolvable` macro to enable more automatic cascading resolution.
-
-#### @Resolvable Macro
-
-Apply the `@Resolvable` macro to any class that has dependencies.
+##### Definition
 
 ```swift
-protocol ComplexProtocol {
-    var dependencyA: DependencyA { get }
-    var dependencyB: DependencyB { get }
+func register<C>(_ : C.Type, _ : @escaping () -> C)
+```
+
+Registers a specified type `C` using a function that may return any `C` (typically a sub-type).
+
+##### Usage
+
+```swift
+builder.register(Contract.self) { Implementation() }
+// ...
+let r: Contract = container.resolve()
+```
+
+#### 4. Contract Factory with Scope Parameter
+
+##### Definition
+
+```swift
+func register<C>(_ : C.Type, _ : @escaping (DependencyResolutionScope) -> C)
+```
+
+Registers a specified type `C` using a function parameterised by the current scope.
+
+##### Usage
+
+```swift
+builder.register(Contract.self) { scope in
+    Implementation(dependency: scope.resolve())
+}
+// ...
+let r: Contract = container.resolve()
+```
+
+#### 5. Contract as Implementation by Types
+
+##### Definition
+
+```swift
+func register<C, I>(_ : C.Type, _ : Assigned<C, I>)
+```
+
+Registers a specified type `C` against a specified, compatible type `I`.
+
+##### Usage
+
+```swift
+builder.register(Implementation.init)
+builder.register(Contract.self, assigned(Implementation.self))
+// ...
+let r: Contract = container.resolve()
+```
+
+Note the unfortunate compiler hack, `assigned(...)`, which enforces type compatibility.
+
+Note also that, because `Contract` is registered against the `Implementation` type (rather than a method of instantiation), a method for instantiating `Implementation` must also be registered. This need is mitigated by `Resolvable` types and is demonstrated specifically in number 7.
+
+#### 6. Resolvable Implementation by Type
+
+##### Definition
+
+```swift
+func register<I: Resolvable>(_ : I.Type)
+```
+
+Registers a specified type `I` where `I` conforms to `Resolvable`.
+
+The `Resolvable` protocol is described in detail later.
+
+##### Usage
+
+```swift
+@Resolvable
+class ResolvableImplementation {
+    // ...
+}
+
+// ...
+
+builder.register(ResolvableImplementation.self)
+// ...
+let r: ResolvableImplementation = container.resolve()
+```
+
+Note the use of the `@Resolvable` attribute on the class declaration.
+
+Note also the absence of a need to specify an instantiation method; the type can be registered merely as itself without specifying some function to produce an instance of it.
+
+#### 7. Contract as Resolvable Implementation by Types
+
+##### Definition
+
+```swift
+func register<C, I: Resolvable>(_ : C.Type, _ : Assigned<C, I>)
+```
+
+Registers a specified type `C` against a specified, compatible type `I` where `I` conforms to `Resolvable`.
+
+##### Usage
+
+```swift
+protocol Contract {
+    // ...
 }
 
 @Resolvable
-class ComplexObject {
-    let dependencyA: DependencyA
-    let dependencyB: DependencyB
-}
-```
-
-The macro will generate the necessary (hidden) code to enable a more idiomatic registration:
-
-```swift
-serviceLocator.register(asSelf: ComplexObject.self)
-
-// Don't forget to register DependencyA and DependencyB appropriately.
-```
-
-You can also register the concrete implementation behind an abstraction for any `@Resolvable` class as follows:
-
-```swift
-// It's not pretty but it works.
-serviceLocator.register(ComplexProtocol.self) { $0(ComplexObject.self) }
-```
-
-## Appendix
-
-### How `@Resolvable` Works
-
-You don't need to know this, but it might help.
-
-`@Resolvable` enables more idiomatic IoC by synthesizing a couple of things:
-
-1. Conformance to the `Resolvable` protocol:
-
-```swift
-@Resolvable
-class MyClass { ... }
-
-// becomes
-
-class MyClass { ... }
-extension MyClass : Resolvable { }
-```
-
-2. An initializer which accepts a `DependencyResolver` to construct itself (as per the `Resolvable` protocol's requirements).
-
-```swift
-@Resolvable
-class MyClass {
-    let dependency: Dependency
+class ResolvableImplementation : Contract {
+    // ...
 }
 
-// becomes
+// ...
 
-class MyClass {
-    let dependency: Dependency
-
-    required init(resolver: DependencyResolver) {
-        self.dependency = resolver.resolve()
-    }
-}
-extension MyClass : Resolvable { }
+builder.register(Contract.self, assigned(ResolvableImplementation.self))
+// ...
+let r: Contract = container.resolve()
 ```
-
-If an initializer already exists, it will reuse that initializer in the generated initializer.
-
-```swift
-@Resolvable
-class MyClass {
-    let dependency: Dependency
-
-    init(dependency: Dependency) {
-        self.dependency = dependency
-    }
-}
-
-// becomes
-
-class MyClass {
-    let dependency: Dependency
-
-    init(dependency: Dependency) {
-        self.dependency = dependency
-    }
-
-    required convenience init(resolver: DependencyResolver) {
-        self.init(dependency: resolver.resolve())
-    }
-}
-```
-
-This presents two benefits:
-
-1. If you don't intend to instantiate a `@Resolvable` class outside of IoC, then you don't need to declare an `init` for it as the macro will generate a comprehensive one for you. This means your classes can be more concise.
-
-```swift
-@Resolvable
-class MyClass {
-    let dependency: Dependency
-
-    // No init required - the macro will create one.
-}
-```
-
-2. If you do need an explicit `init` (e.g. for test mocking or more complex initialization scenarios) then you needn't sacrifice production code legibility as the macro generated code is invisible.
-
-Once the above two things have been managed, the `ServiceLocator` will manage the cascading resolution of dependencies by doing something roughly akin to this:
-
-```swift
-func register<R: Resolvable>(_ : R.Type) {
-    serviveLocator.register {
-        R.init(resolver: self)
-    }
-}
-```
-
-i.e. a simple factory registration that invokes the static `init(resolver: DependencyResolver)` created by the macro, which in turn initializes all members by resolving them via the same `DependnecyResolver` in the same way.
