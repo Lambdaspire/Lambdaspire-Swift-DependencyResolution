@@ -16,7 +16,7 @@ Many Lambdaspire Swift packages will need some kind of dependency resolution tha
 
 Use `ContainerBuilder` to to register dependencies and build a `Container`.
 
-The `ContainerBuilder` type conforms to `DependencyRegistry` from the Abstractions package, and the `Container` type conforms to the `DependencyResolver` protocol. Ideally, use these abstractions in your code rathern than the concrete container types.
+The `ContainerBuilder` type conforms to `DependencyRegistry` from the Abstractions package, and the `Container` type conforms to the `DependencyResolver` protocol. Ideally, use these abstractions in your code rather than the concrete container types.
 
 Register dependencies as one of:
 - Transient: A new instance every time the dependency is resolved.
