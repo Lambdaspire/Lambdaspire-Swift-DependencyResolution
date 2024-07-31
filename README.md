@@ -4,6 +4,12 @@ A lightweight IoC Container / Service Locator / Dependency Injection package for
 
 Inspired by Autofac and the modern .NET SDK.
 
+If you're a .NET developer who's been struggling in the Apple developer ecosystem due to a lack of decent IoC, hopefully this package will help.
+
+If you've never built with .NET (or any other platform) before but feel like your Swift code routinely becomes a spaghetti mess, difficult to test, or cumbersome to maintain, this package might help you wrangle complex dependency graphs and write more SOLID code.
+
+Many Lambdaspire Swift packages will need some kind of dependency resolution that conforms to `DependencyResolver` and `DependencyRegistry` from the [Abstractions](https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions) package. The intent is for this package to satisfy that need.
+
 ## Usage
 
 ### High Level
@@ -454,12 +460,22 @@ let container = builder.build()
 
 This way, even as dependencies increase in number, our registrations need not change. It's more concise, easier to read, and requires much less maintenance as the codebase evolves.
 
-## Closing
+## Breaking Changes in v2.0.0
 
-If you're a .NET developer who's been struggling in the Apple developer ecosystem due to a lack of decent IoC, hopefully this package will help. If you've never built with .NET (or any other platform) before but feel like your Swift code routinely becomes a spaghetti mess, this package might help you wrangle complex dependency graphs and write more SOLID code.
+This version is vastly different from v1.#.#. Here is a list of the more significant changes:
 
-Found a bug? Please create an issue and/or a pull request.
+- `ServiceLocator` has become `Container`.
+- Previously, `ServiceLocator` implemented both `DependencyRegistry` and `DependencyResolver`. Now, `ContainerBuilder` implements `DependencyRegistry` and produces a `Container` which implements `DependencyResolver`.
+- Due to the previous change, registrations cannot be updated in-flight. Instead of doing that, consider using a Provider pattern, and think of your IoC container as a configuration fixed for an application's lifetime.
 
-Got questions? Reach out and your questions will be added to an FAQ section.
+## FAQs
 
-Happy resolving!
+None yet. Got a question? Reach out.
+
+## Known Issues
+
+None yet. Found a bug? Please create an issue and/or a pull request.
+
+## The End
+
+👋 Happy resolving!
