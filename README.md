@@ -10,6 +10,8 @@ Inspired by Autofac and the modern .NET SDK.
 
 Use `ContainerBuilder` to to register dependencies and build a `Container`.
 
+The `ContainerBuilder` type conforms to `DependencyRegistry` from the Abstractions package, and the `Container` type conforms to the `DependencyResolver` protocol. Ideally, use these abstractions in your code rathern than the concrete container types.
+
 Register dependencies as one of:
 - Transient: A new instance every time the dependency is resolved.
 - Scoped: A common instance every time the dependency is resolved in the same scope.
@@ -31,7 +33,7 @@ let container = builder.build()
 
 The `DependencyResolutionScope` protocol defines means to resolve dependencies and to create a new scope.
 
-The `Container` type conforms to this protocol.
+The `DependencyResolver` protocol extends this protocol, and therefore the `Container` type conforms to it.
 
 Dependencies registered as `scoped` act as singletons within that scope.
 
@@ -173,6 +175,14 @@ builder.register(Contract.self) { Implementation() }
 let r: Contract = container.resolve()
 ```
 
+Again, if you prefer the parenthetical style, you can do something like this (where applicable):
+
+```swift
+builder.register(Contract.self, Implementation.init)
+// ...
+let r: Contract = container.resolve()
+```
+
 #### 4. Contract Factory with Scope Parameter
 
 ##### Definition
@@ -226,7 +236,7 @@ func register<I: Resolvable>(_ : I.Type)
 
 Registers a specified type `I` where `I` conforms to `Resolvable`.
 
-The `Resolvable` protocol is described in detail later.
+The `Resolvable` protocol and `@Resolvable` macro are described in detail later.
 
 ##### Usage
 
@@ -275,3 +285,169 @@ builder.register(Contract.self, assigned(ResolvableImplementation.self))
 // ...
 let r: Contract = container.resolve()
 ```
+
+## About `@Resolvable`
+
+The `Resolvable` protocol is defined in Abstractions and simply defines an initializer that accepts a scope.
+
+```swift
+public protocol Resolvable {
+    init(scope: DependencyResolutionScope)
+}
+```
+
+This package defines an accompanying macro, `@Resolvable`, that can be applied to any type so that the required initializer can be auto-generated. This enables a more idiomatic style of cascading dependency resolution without manually declaring and maintaining initializers. This is particularly useful for complex dependency graphs.
+
+### Example
+
+#### Not Ideal Approach
+
+Imagine you have an authentication system implemented like below:
+
+```swift
+class AuthContext : ObservableObject {
+    
+    @Published private(set) var user: Loadable<User> = .notLoaded
+    
+    private let auth: AuthService
+    
+    init(auth: AuthService) {
+        self.auth = auth
+    }
+    
+    func signIn() {
+        user = .loading
+        Task {
+            do {
+                user = .loaded(try await auth.signIn())
+            } catch {
+                user = .failed(error)
+            }
+        }
+    }
+}
+
+protocol AuthService {
+    func signIn() async throws -> User
+}
+
+class OktaAuthService : AuthService {
+
+    init(config: OktaConfig) {
+        OktaLibrary.configure(config)
+    }
+
+    func signIn() async throws -> User {
+        OktaUserMapper.map(try await OktaLibrary.signIn())
+    }
+}
+```
+
+To wire all this up as is in a `Container`, we could do something like this:
+
+```swift
+let builder: ContainerBuilder = .init()
+
+builder.register { scope in
+    AuthContext(auth: scope.resolve()
+}
+
+builder.register(AuthService.self) { scope in
+    OktaAuthService(config: OktaConfig.fromBundle)
+}
+
+let container = builder.build()
+```
+
+It's okay, but the "Factory with Scope Parameter" methods are a verbose way to resolve complex dependency graphs (i.e. when dependencies have dependencies which have dependencies which have dependencies... etc). It also means the registration code requires ongoing maintenance as initializers change shape.
+
+For example, if `AuthContext` becomes dependent on additional services:
+
+```swift
+class AuthContext : ObservableObject {
+    // ...
+    
+    private let analytics: AnalyticsService
+    private let cache: CacheService
+    
+    // ...
+}
+```
+
+Then the registration must be manually updated:
+
+```swift
+// ...
+
+builder.register { scope in
+    AuthContext(
+        auth: scope.resolve(), 
+        analytics: scope.resolve(),
+        cache: scope.resolve())
+}
+
+// ...
+```
+
+It's a simple change, but this quickly becomes tiresome as a codebase evolves, and ugly as the dependencies grow in number.
+
+#### More Ideal Approach
+
+Instead, define your classes like this:
+
+```swift
+@Resolvable
+class AuthContext : ObservableObject {
+    
+    @Published private(set) var user: Loadable<User> = .notLoaded
+    
+    private let auth: AuthService
+    
+    init(auth: AuthService) {
+        self.auth = auth
+    }
+    
+    func signIn() {
+        user = .loading
+        Task {
+            do {
+                user = .loaded(try await auth.signIn())
+            } catch {
+                user = .failed(error)
+            }
+        }
+    }
+}
+
+protocol AuthService {
+    func signIn() async throws -> User
+}
+
+@Resolvable
+class OktaAuthService : AuthService {
+
+    init(config: OktaConfig) {
+        OktaLibrary.configure(config)
+    }
+
+    func signIn() async throws -> User {
+        OktaUserMapper.map(try await OktaLibrary.signIn())
+    }
+}
+```
+
+Register the dependency graph like this:
+
+```swift
+let builder: ContainerBuilder = .init()
+
+builder.register(AuthContext.self)
+
+builder.register(AuthService.self, assigned(OktaAuthService))
+
+builder.register(OktaConfig.fromBundle)
+
+let container = builder.build()
+```
+
+This way, even as dependencies increase in number, our registrations need not change. It's more concise, easier to read, and requires much less maintenance as the codebase evolves.
