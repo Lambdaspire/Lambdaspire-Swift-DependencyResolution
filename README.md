@@ -389,7 +389,7 @@ builder.register { scope in
 // ...
 ```
 
-It's a simple change, but this quickly becomes tiresome as a codebase evolves, and ugly as the dependencies grow in number.
+It's a simple change, but this quickly becomes tiresome as a codebase evolves, and ugly as the dependencies grow in number. It's clear from the repetition that there is room for automation.
 
 #### More Ideal Approach
 
