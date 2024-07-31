@@ -348,11 +348,11 @@ To wire all this up as is in a `Container`, we could do something like this:
 ```swift
 let builder: ContainerBuilder = .init()
 
-builder.register { scope in
+builder.singleton { scope in
     AuthContext(auth: scope.resolve()
 }
 
-builder.register(AuthService.self) { scope in
+builder.transient(AuthService.self) { scope in
     OktaAuthService(config: OktaConfig.fromBundle)
 }
 
@@ -379,7 +379,7 @@ Then the registration must be manually updated:
 ```swift
 // ...
 
-builder.register { scope in
+builder.singleton { scope in
     AuthContext(
         auth: scope.resolve(), 
         analytics: scope.resolve(),
@@ -441,11 +441,11 @@ Register the dependency graph like this:
 ```swift
 let builder: ContainerBuilder = .init()
 
-builder.register(AuthContext.self)
+builder.singleton(AuthContext.self)
 
-builder.register(AuthService.self, assigned(OktaAuthService))
+builder.transient(AuthService.self, assigned(OktaAuthService))
 
-builder.register(OktaConfig.fromBundle)
+builder.transient(OktaConfig.fromBundle)
 
 let container = builder.build()
 ```
