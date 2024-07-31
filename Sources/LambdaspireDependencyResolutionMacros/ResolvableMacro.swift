@@ -61,12 +61,12 @@ public struct ResolvableMacro : MemberMacro, ExtensionMacro {
                     .parameterClause
                     .parameters
                     .map { p in
-                        "\(p.firstName): resolver.resolve()"
+                        "\(p.firstName): scope.resolve()"
                     }
                     
                 return [
                     """
-                    required convenience init(resolver: DependencyResolver) {
+                    required convenience init(scope: DependencyResolutionScope) {
                         self.init(\(raw: arguments.joined(separator: ", ")))
                     }
                     """
@@ -91,12 +91,12 @@ public struct ResolvableMacro : MemberMacro, ExtensionMacro {
                     b.pattern
                 }
                 .map { name in
-                    "self.\(name) = resolver.resolve()"
+                    "self.\(name) = scope.resolve()"
                 }
             
             return [
                 """
-                required init(resolver: DependencyResolver) {
+                required init(scope: DependencyResolutionScope) {
                     \(raw: assignments.joined(separator: "\n"))
                 }
                 """

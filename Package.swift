@@ -21,10 +21,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions",
-            from: "1.0.0"),
-        .package(
-            url: "https://github.com/Lambdaspire/Lambdaspire-Swift-Logging",
-            from: "1.0.0"),
+            branch: "v2"),
         .package(
             url: "https://github.com/apple/swift-syntax.git",
             from: "509.0.0")
@@ -56,8 +53,7 @@ let package = Package(
         .testTarget(
             name: "LambdaspireDependencyResolutionTests",
             dependencies: [
-                "LambdaspireDependencyResolution",
-                .product(name: "LambdaspireLogging", package: "Lambdaspire-Swift-Logging")
+                "LambdaspireDependencyResolution"
             ]),
     ]
 )
