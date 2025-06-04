@@ -21,7 +21,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/Lambdaspire/Lambdaspire-Swift-Abstractions",
-            from: "2.0.0"),
+            branch: "scope-overrides"),
         .package(
             url: "https://github.com/apple/swift-syntax.git",
             from: "509.0.0")

@@ -51,6 +51,16 @@ final class ContainerScopedSameResultInSameScope : ContainerBaseTest {
             anotherScoped.scope().resolve(TestServiceProtocol.self).dependency.label,
             anotherScoped.scope().scope().resolve(TestServiceProtocol.self).dependency.label)
         
+        let scopedOnAScoped = anotherScoped.scope { r in
+            r.singleton(TestServiceProtocol.self) {
+                TestService(dependency: Dependency(label: "So many scopes."))
+            }
+        }
+        
+        let scopedOnAScopedService: TestServiceProtocol = scopedOnAScoped.resolve()
+        
+        XCTAssertEqual(scopedOnAScopedService.dependency.label, "So many scopes.")
+        
         XCTAssertEqual(count, 1)
     }
     
