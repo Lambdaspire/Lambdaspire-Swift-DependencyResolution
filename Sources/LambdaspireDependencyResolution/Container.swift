@@ -44,6 +44,17 @@ public class Container : ScopeRegistry, DependencyResolutionScope {
     public func scope() -> any DependencyResolutionScope {
         Container(id: "\(id)_\(UUID())", builder: builder)
     }
+    
+    public func scope(build: (DependencyRegistry) -> Void) -> any DependencyResolutionScope {
+        
+        let scopeBuilder: ContainerBuilder = .init()
+        
+        build(scopeBuilder)
+        
+        let combinedBuilder = builder.combine(scopeBuilder)
+        
+        return Container(id: "\(id)_\(UUID())", builder: combinedBuilder)
+    }
 }
 
 typealias RegistrationKey = String
@@ -51,3 +62,9 @@ typealias RegistrationKey = String
 typealias Registration = (DependencyResolutionScope) -> Any
 
 func key<T>(_ : T.Type) -> RegistrationKey { .init(describing: T.self) }
+
+extension ContainerBuilder {
+    func combine(_ other: ContainerBuilder) -> ContainerBuilder {
+        .init(registrations: registrations + other.registrations)
+    }
+}

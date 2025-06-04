@@ -11,6 +11,10 @@ public class ContainerBuilder : DependencyRegistry {
     
     public init() { }
     
+    init(registrations: [ScopedRegistration]) {
+        self.registrations = registrations
+    }
+    
     private func registerTransient<C, I>(_ : C.Type, _ fn: @escaping (any DependencyResolutionScope) -> I) {
         registrations.append { r in
             r.register(C.self) { s in

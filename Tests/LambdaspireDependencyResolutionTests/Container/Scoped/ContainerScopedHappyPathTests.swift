@@ -14,6 +14,46 @@ final class ContainerScopedSameResultInSameScope : ContainerBaseTest {
         }
     }
     
+    func testScopedOverrides() {
+        
+        let scoped = container.scope { r in
+            r.singleton(TestServiceProtocol.self) {
+                TestService(dependency: Dependency(label: UUID().uuidString))
+            }
+        }
+        
+        let containerService: TestServiceProtocol = container.resolve()
+        
+        let scopedService: TestServiceProtocol = scoped.resolve()
+        
+        XCTAssertNotEqual(containerService.dependency.label, scopedService.dependency.label)
+        
+        let scopedService2: TestServiceProtocol = scoped.resolve()
+        
+        XCTAssertEqual(scopedService.dependency.label, scopedService2.dependency.label)
+        
+        XCTAssertEqual(
+            scoped.scope().resolve(TestServiceProtocol.self).dependency.label,
+            scoped.scope().scope().resolve(TestServiceProtocol.self).dependency.label)
+        
+        let anotherScoped = container.scope { r in
+            r.scoped(TestServiceProtocol.self) {
+                TestService(dependency: Dependency(label: UUID().uuidString))
+            }
+        }
+        
+        let anotherScopedService: TestServiceProtocol = anotherScoped.resolve()
+        
+        XCTAssertNotEqual(containerService.dependency.label, scopedService.dependency.label)
+        XCTAssertNotEqual(scopedService.dependency.label, anotherScopedService.dependency.label)
+        
+        XCTAssertNotEqual(
+            anotherScoped.scope().resolve(TestServiceProtocol.self).dependency.label,
+            anotherScoped.scope().scope().resolve(TestServiceProtocol.self).dependency.label)
+        
+        XCTAssertEqual(count, 1)
+    }
+    
     func test() {
         
         // Resolve a few times in various scopes, including root.
